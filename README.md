@@ -1,3 +1,74 @@
+# Task Management System
+
+A Next.js application for task management with role-based permissions and task history tracking.
+
+## Features
+
+- User authentication with JWT
+- Role-based authorization (LEAD and TEAM roles)
+- Task management with multiple status options (NOT_STARTED, ON_PROGRESS, DONE, REJECT)
+- Task history tracking for all changes
+- PostgreSQL database with Prisma ORM
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login and get JWT token
+
+### Tasks
+
+- `GET /api/tasks` - Get all tasks (LEAD sees all, TEAM sees assigned)
+- `POST /api/tasks` - Create a new task (LEAD only)
+- `GET /api/tasks/:id` - Get a specific task
+- `PUT /api/tasks/:id` - Update a task (LEAD can update everything, TEAM can update status and description)
+- `DELETE /api/tasks/:id` - Delete a task (LEAD only)
+
+### Users
+
+- `GET /api/users` - Get all users (LEAD only)
+
+### Task History
+
+- `GET /api/history` - Get history of all tasks (LEAD) or assigned tasks (TEAM)
+- `GET /api/history?taskId=xxx` - Get history for a specific task
+
+## Change Tracking
+
+The system automatically tracks all changes to tasks in the TaskHistory model:
+
+- Task creation
+- Status changes
+- Assignment changes
+- Title/description updates
+
+All changes include:
+
+- Who made the change
+- When it was made
+- Previous values
+- New values
+- Type of action performed
+
+## Database Setup with Docker
+
+```bash
+# Start PostgreSQL with Docker
+docker-compose up -d
+
+# Run Prisma migrations
+npx prisma migrate dev
+
+# Seed the database (if needed)
+npx prisma db seed
+```
+
+## Environment Variables
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret key for JWT token generation
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
