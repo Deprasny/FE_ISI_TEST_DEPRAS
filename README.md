@@ -125,7 +125,6 @@ GET /api/users - List all users (LEAD)
 
 ### 📜 History Endpoints
 \`\`\`
-GET /api/history          - Get task history
 GET /api/history?taskId=x - Get specific task history
 \`\`\`
 
