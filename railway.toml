@@ -4,8 +4,6 @@ buildCommand = "npm install && npm run build"
 
 [deploy]
 startCommand = "npm run db:migrate && NODE_ENV=production ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts && npm run start"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 60
 restartPolicyType = "on_failure"
 numReplicas = 1
 
