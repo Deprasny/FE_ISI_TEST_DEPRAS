@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthenticatedLayout } from "@/components/layout/AuthenticatedLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTasks } from "@/hooks/use-tasks";
@@ -40,13 +41,19 @@ export default function NewTaskPage() {
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownButtonRef = useRef<HTMLDivElement>(null);
 
   const teamMembers = getTeamMembers();
 
   // Handle click outside to close dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current && 
+        dropdownButtonRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        !dropdownButtonRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     }
@@ -56,22 +63,6 @@ export default function NewTaskPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // Update dropdown position when window is resized
-  useEffect(() => {
-    function handleResize() {
-      if (isDropdownOpen) {
-        // Force a re-render to update the dropdown position
-        setIsDropdownOpen(false);
-        setTimeout(() => setIsDropdownOpen(true), 0);
-      }
-    }
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isDropdownOpen]);
 
   // Only LEAD users can access this page
   if (user?.role !== "LEAD") {
@@ -123,7 +114,7 @@ export default function NewTaskPage() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-50 p-4 md:p-8 font-poppins">
+    <AuthenticatedLayout>
       <style
         jsx
         global
@@ -204,11 +195,11 @@ export default function NewTaskPage() {
                 ) : teamMembers.length === 0 ? (
                   <div className="text-sm text-secondary-500">No team members available</div>
                 ) : (
-                  <div
-                    className="relative"
-                    ref={dropdownRef}
-                  >
-                    <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="relative">
+                    <div 
+                      className="mt-1 relative rounded-md shadow-sm"
+                      ref={dropdownButtonRef}
+                    >
                       <div
                         className="cursor-pointer w-full border border-secondary-300 rounded-md py-2 pl-3 pr-10 text-left focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -266,23 +257,16 @@ export default function NewTaskPage() {
 
                       {isDropdownOpen && (
                         <div
-                          className="fixed mt-1 w-full bg-white shadow-xl rounded-md overflow-hidden origin-top ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                          ref={dropdownRef}
+                          className="fixed z-[1000] mt-1 bg-white shadow-lg rounded-md overflow-auto border border-secondary-200"
                           id="team-member-options"
                           role="listbox"
                           style={{
-                            maxHeight: "300px",
+                            maxHeight: "250px",
                             overflowY: "auto",
-                            width: dropdownRef.current
-                              ? dropdownRef.current.offsetWidth + "px"
-                              : "auto",
-                            left: dropdownRef.current
-                              ? dropdownRef.current.getBoundingClientRect().left + "px"
-                              : "0",
-                            top: dropdownRef.current
-                              ? dropdownRef.current.getBoundingClientRect().bottom + 5 + "px"
-                              : "0",
-                            scrollbarWidth: "thin",
-                            scrollbarColor: "#CBD5E0 #F7FAFC"
+                            width: dropdownButtonRef.current ? dropdownButtonRef.current.offsetWidth + "px" : "auto",
+                            left: dropdownButtonRef.current ? dropdownButtonRef.current.getBoundingClientRect().left + "px" : "0",
+                            top: dropdownButtonRef.current ? dropdownButtonRef.current.getBoundingClientRect().bottom + 5 + "px" : "0"
                           }}
                         >
                           <div className="py-1">
@@ -432,6 +416,6 @@ export default function NewTaskPage() {
           </form>
         </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }

@@ -1,17 +1,18 @@
-import { getUserFromToken } from "@/lib/auth";
+import { withAuth, type TokenPayload } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 // Get history for a specific task
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export const GET = withAuth(async (request: NextRequest, user: TokenPayload) => {
   try {
-    const user = getUserFromToken(request);
+    // Extract the task ID from the URL path
+    const pathParts = request.nextUrl.pathname.split('/');
+    // The task ID is the second-to-last part in the path for the history endpoint
+    const taskId = pathParts[pathParts.length - 2];
 
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!taskId) {
+      return NextResponse.json({ message: "Task ID is required" }, { status: 400 });
     }
-
-    const taskId = params.id;
 
     // Check if task exists
     const task = await prisma.task.findUnique({
@@ -53,4 +54,4 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       { status: 500 }
     );
   }
-}
+});

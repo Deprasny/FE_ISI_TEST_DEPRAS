@@ -36,6 +36,14 @@ export interface UpdateTaskData {
   assignedToId?: string | null;
 }
 
+export interface PaginatedTaskHistory {
+  items: TaskHistoryWithUser[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 export const taskService = {
   // Get all tasks
   getAllTasks: async (): Promise<TaskWithRelations[]> => {
@@ -71,5 +79,30 @@ export const taskService = {
   getTaskHistory: async (id: string): Promise<TaskHistoryWithUser[]> => {
     const response = await apiClient.get<TaskHistoryWithUser[]>(`/tasks/${id}/history`);
     return response.data;
+  },
+
+  // Get paginated task history
+  getPaginatedTaskHistory: async (
+    id: string,
+    page: number = 1,
+    limit: number = 5
+  ): Promise<PaginatedTaskHistory> => {
+    const response = await apiClient.get<TaskHistoryWithUser[]>(
+      `/tasks/${id}/history?page=${page}&limit=${limit}`
+    );
+    
+    // If the API doesn't support pagination yet, we'll handle it client-side
+    const items = response.data;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedItems = items.slice(startIndex, endIndex);
+    
+    return {
+      items: paginatedItems,
+      total: items.length,
+      page,
+      limit,
+      hasMore: endIndex < items.length
+    };
   }
 };

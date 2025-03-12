@@ -1,7 +1,7 @@
 "use client";
 
+import { AuthButton } from "@/components/ui/auth-button";
 import { Input } from "@/components/ui/input";
-import { AuthButton } from "@/features/auth/components/auth-button";
 import { useAuth } from "@/hooks/use-auth";
 import { LoginFormValues, loginSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";

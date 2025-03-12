@@ -19,6 +19,7 @@ export interface RegisterData {
   name: string;
   email: string;
   password: string;
+  role: "LEAD" | "TEAM";
 }
 
 export const authService = {

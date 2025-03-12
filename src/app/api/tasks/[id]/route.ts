@@ -1,17 +1,17 @@
-import { getUserFromToken } from "@/lib/auth";
+import { withAuth, withLeadAuth, type TokenPayload } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 // Get a single task by ID
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export const GET = withAuth(async (request: NextRequest, user: TokenPayload) => {
   try {
-    const user = getUserFromToken(request);
+    // Extract the task ID from the URL path
+    const pathParts = request.nextUrl.pathname.split('/');
+    const taskId = pathParts[pathParts.length - 1];
 
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!taskId) {
+      return NextResponse.json({ message: "Task ID is required" }, { status: 400 });
     }
-
-    const taskId = params.id;
 
     const task = await prisma.task.findUnique({
       where: { id: taskId },
@@ -50,18 +50,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       { status: 500 }
     );
   }
-}
+});
 
 // Update a task
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export const PUT = withAuth(async (request: NextRequest, user: TokenPayload) => {
   try {
-    const user = getUserFromToken(request);
+    // Extract the task ID from the URL path
+    const pathParts = request.nextUrl.pathname.split('/');
+    const taskId = pathParts[pathParts.length - 1];
 
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!taskId) {
+      return NextResponse.json({ message: "Task ID is required" }, { status: 400 });
     }
 
-    const taskId = params.id;
     const body = await request.json();
     const { title, description, status, assignedToId } = body;
 
@@ -87,7 +88,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Team members can only update status and description
-    if (user.role !== "LEAD" && (title || assignedToId)) {
+    if (user.role !== "LEAD" && (title || assignedToId !== undefined)) {
       return NextResponse.json(
         { message: "Team members can only update status and description" },
         { status: 403 }
@@ -109,8 +110,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       newDesc: description || undefined,
       previousTitle: title ? existingTask.title : undefined,
       newTitle: title || undefined,
-      previousAssignee: assignedToId ? existingTask.assignedToId : undefined,
-      newAssignee: assignedToId || undefined
+      previousAssignee: assignedToId !== undefined ? existingTask.assignedToId : undefined,
+      newAssignee: assignedToId !== undefined ? assignedToId : undefined
     };
 
     // Prepare update data
@@ -118,7 +119,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (user.role === "LEAD" && title) updateData.title = title;
     if (description) updateData.description = description;
     if (status) updateData.status = status;
-    if (user.role === "LEAD" && assignedToId) updateData.assignedToId = assignedToId;
+    if (user.role === "LEAD" && assignedToId !== undefined) updateData.assignedToId = assignedToId;
 
     // Update task with history
     const updatedTask = await prisma.task.update({
@@ -155,23 +156,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       { status: 500 }
     );
   }
-}
+});
 
 // Delete a task (LEAD only)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export const DELETE = withLeadAuth(async (request: NextRequest, user: TokenPayload) => {
   try {
-    const user = getUserFromToken(request);
+    // Extract the task ID from the URL path
+    const pathParts = request.nextUrl.pathname.split('/');
+    const taskId = pathParts[pathParts.length - 1];
 
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!taskId) {
+      return NextResponse.json({ message: "Task ID is required" }, { status: 400 });
     }
-
-    // Only LEADs can delete tasks
-    if (user.role !== "LEAD") {
-      return NextResponse.json({ message: "Only LEAD users can delete tasks" }, { status: 403 });
-    }
-
-    const taskId = params.id;
 
     // Check if task exists
     const task = await prisma.task.findUnique({
@@ -182,22 +178,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: "Task not found" }, { status: 404 });
     }
 
-    // Create a history entry before deletion
-    await prisma.taskHistory.create({
-      data: {
-        taskId,
-        userId: user.id,
-        action: "TASK_DELETED",
-        previousStatus: task.status,
-        previousTitle: task.title,
-        previousDesc: task.description,
-        previousAssignee: task.assignedToId
-      }
-    });
+    // Use a transaction to ensure all operations succeed or fail together
+    await prisma.$transaction(async (tx) => {
+      // First, delete all task history records associated with this task
+      await tx.taskHistory.deleteMany({
+        where: { taskId }
+      });
 
-    // Delete task
-    await prisma.task.delete({
-      where: { id: taskId }
+      // Then delete the task
+      await tx.task.delete({
+        where: { id: taskId }
+      });
     });
 
     return NextResponse.json({ message: "Task deleted successfully" });
@@ -208,4 +199,4 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       { status: 500 }
     );
   }
-}
+});

@@ -1,7 +1,7 @@
 "use client";
 
+import { AuthButton } from "@/components/ui/auth-button";
 import { Input } from "@/components/ui/input";
-import { AuthButton } from "@/features/auth/components/auth-button";
 import { useAuth } from "@/hooks/use-auth";
 import { RegisterFormValues, registerSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +20,8 @@ export default function RegisterPage() {
     defaultValues: {
       name: "",
       email: "",
-      password: ""
+      password: "",
+      role: "TEAM"
     }
   });
 
@@ -251,6 +252,37 @@ export default function RegisterPage() {
                   </p>
                 )}
                 <p className="mt-2 text-xs text-secondary-500">Must be at least 6 characters</p>
+              </div>
+
+              {/* Role Selection */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Account Type
+                </label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="TEAM"
+                      {...register("role")}
+                      defaultChecked
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-secondary-700">Team Member</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="LEAD"
+                      {...register("role")}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-secondary-700">Team Lead</span>
+                  </label>
+                </div>
+                <p className="mt-1 text-xs text-secondary-500">
+                  Team Leads can create and assign tasks, while Team Members can only manage assigned tasks.
+                </p>
               </div>
             </div>
 

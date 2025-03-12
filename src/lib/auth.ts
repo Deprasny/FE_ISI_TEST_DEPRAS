@@ -70,3 +70,49 @@ export function unauthorized(): NextResponse {
 export function forbidden(): NextResponse {
   return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 }
+
+// New wrapper function for API routes that require authentication
+export function withAuth(handler: (req: NextRequest, user: TokenPayload) => Promise<NextResponse>) {
+  return async (request: NextRequest) => {
+    try {
+      const token = getTokenFromRequest(request);
+      
+      if (!token) {
+        return NextResponse.json(
+          { message: "Authentication required" },
+          { status: 401 }
+        );
+      }
+
+      const user = verifyToken(token);
+      
+      if (!user) {
+        return NextResponse.json(
+          { message: "Invalid token" },
+          { status: 401 }
+        );
+      }
+
+      return handler(request, user);
+    } catch (error) {
+      console.error("Authentication error:", error);
+      return NextResponse.json(
+        { message: "Authentication failed" },
+        { status: 401 }
+      );
+    }
+  };
+}
+
+// New wrapper function for API routes that require LEAD role
+export function withLeadAuth(handler: (req: NextRequest, user: TokenPayload) => Promise<NextResponse>) {
+  return withAuth(async (request: NextRequest, user: TokenPayload) => {
+    if (user.role !== "LEAD") {
+      return NextResponse.json(
+        { message: "This operation requires LEAD role" },
+        { status: 403 }
+      );
+    }
+    return handler(request, user);
+  });
+}

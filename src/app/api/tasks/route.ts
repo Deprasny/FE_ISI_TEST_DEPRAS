@@ -1,20 +1,10 @@
-import { getUserFromToken } from "@/lib/auth";
+import { withAuth, withLeadAuth, type TokenPayload } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 // Create a new task (Lead only)
-export async function POST(request: NextRequest) {
+export const POST = withLeadAuth(async (request: NextRequest, user: TokenPayload) => {
   try {
-    const user = getUserFromToken(request);
-
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    if (user.role !== "LEAD") {
-      return NextResponse.json({ message: "Only LEAD users can create tasks" }, { status: 403 });
-    }
-
     const body = await request.json();
     const { title, description, assignedToId } = body;
 
@@ -80,69 +70,69 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // Get all tasks
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, user: TokenPayload) => {
   try {
-    const user = getUserFromToken(request);
-
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
     let tasks;
-
-    // If LEAD, get all tasks. If TEAM, get only assigned tasks
     if (user.role === "LEAD") {
+      // LEAD can see all tasks
       tasks = await prisma.task.findMany({
         include: {
           createdBy: {
             select: {
               id: true,
               name: true,
-              email: true
-            }
+              email: true,
+            },
           },
           assignedTo: {
             select: {
               id: true,
               name: true,
-              email: true
-            }
-          }
+              email: true,
+            },
+          },
         },
-        orderBy: { createdAt: "desc" }
+        orderBy: {
+          createdAt: "desc",
+        },
       });
     } else {
+      // TEAM members can only see tasks assigned to them
       tasks = await prisma.task.findMany({
-        where: { assignedToId: user.id },
+        where: {
+          assignedToId: user.id,
+        },
         include: {
           createdBy: {
             select: {
               id: true,
               name: true,
-              email: true
-            }
+              email: true,
+            },
           },
           assignedTo: {
             select: {
               id: true,
               name: true,
-              email: true
-            }
-          }
+              email: true,
+            },
+          },
         },
-        orderBy: { createdAt: "desc" }
+        orderBy: {
+          createdAt: "desc",
+        },
       });
     }
 
     return NextResponse.json(tasks);
   } catch (error) {
-    console.error("Task listing error:", error);
+    console.error("Error fetching tasks:", error);
     return NextResponse.json(
-      { message: "Internal server error", error: String(error) },
+      { message: "Error fetching tasks" },
       { status: 500 }
     );
   }
-}
+});

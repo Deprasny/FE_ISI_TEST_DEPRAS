@@ -1,5 +1,6 @@
 import { ReactQueryProvider } from "@/lib/providers/query-provider";
 import { Poppins } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -18,7 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${poppins.variable} font-sans`}>
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+        <ReactQueryProvider>
+          {children}
+          <Toaster position="top-right" />
+        </ReactQueryProvider>
       </body>
     </html>
   );
