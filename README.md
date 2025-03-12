@@ -1,107 +1,233 @@
-# Task Management System
+# 📋 Task Management System
 
-A Next.js application for task management with role-based permissions and task history tracking.
+A modern Next.js application for task management with role-based permissions and comprehensive task history tracking.
 
-## Features
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat&logo=prisma)](https://www.prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 
-- User authentication with JWT
-- Role-based authorization (LEAD and TEAM roles)
-- Task management with multiple status options (NOT_STARTED, ON_PROGRESS, DONE, REJECT)
-- Task history tracking for all changes
-- PostgreSQL database with Prisma ORM
+## 🌟 Features
 
-## API Endpoints
+- 🔐 **Secure Authentication**
+  - JWT-based authentication
+  - Password hashing with bcrypt
+  - Protected API routes
 
-### Authentication
+- 👥 **Role-based Authorization**
+  - LEAD role with full access
+  - TEAM role with limited permissions
+  - Hierarchical task management
 
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login and get JWT token
+- ✨ **Task Management**
+  - Multiple status options (NOT_STARTED, ON_PROGRESS, DONE, REJECT)
+  - Detailed task descriptions
+  - Assignment tracking
+  - Real-time updates
 
-### Tasks
+- 📝 **Task History**
+  - Comprehensive change tracking
+  - Audit trail for all modifications
+  - User action logging
 
-- `GET /api/tasks` - Get all tasks (LEAD sees all, TEAM sees assigned)
-- `POST /api/tasks` - Create a new task (LEAD only)
-- `GET /api/tasks/:id` - Get a specific task
-- `PUT /api/tasks/:id` - Update a task (LEAD can update everything, TEAM can update status and description)
-- `DELETE /api/tasks/:id` - Delete a task (LEAD only)
+- 🛠 **Technical Stack**
+  - Next.js 14 with App Router
+  - TypeScript for type safety
+  - PostgreSQL with Prisma ORM
+  - Tailwind CSS for styling
+  - React Query for data fetching
 
-### Users
+## 🚀 Quick Start
 
-- `GET /api/users` - Get all users (LEAD only)
+### Prerequisites
 
-### Task History
+- Node.js 18 or later
+- Docker and Docker Compose
+- npm or pnpm
 
-- `GET /api/history` - Get history of all tasks (LEAD) or assigned tasks (TEAM)
-- `GET /api/history?taskId=xxx` - Get history for a specific task
+### Installation
 
-## Change Tracking
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd task-management-system
+   ```
 
-The system automatically tracks all changes to tasks in the TaskHistory model:
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   pnpm install
+   ```
 
-- Task creation
-- Status changes
-- Assignment changes
-- Title/description updates
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your values
+   ```
 
-All changes include:
+4. **Start the database**
+   ```bash
+   docker-compose up -d
+   ```
 
-- Who made the change
-- When it was made
-- Previous values
-- New values
-- Type of action performed
+5. **Run migrations and seed**
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
 
-## Database Setup with Docker
+6. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-```bash
-# Start PostgreSQL with Docker
-docker-compose up -d
+## 🔑 Authentication
 
-# Run Prisma migrations
-npx prisma migrate dev
+### Test Credentials
 
-# Seed the database (if needed)
-npx prisma db seed
-```
+- **Lead User**
+  ```
+  Email: lead@example.com
+  Password: password123
+  ```
 
-## Environment Variables
+- **Team Members**
+  ```
+  Email: team1@example.com
+  Password: password123
 
-- `DATABASE_URL` - PostgreSQL connection string
-- `JWT_SECRET` - Secret key for JWT token generation
+  Email: team2@example.com
+  Password: password123
+  ```
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 🛣 API Routes
 
-## Getting Started
+### 🔐 Authentication Endpoints
+\`\`\`
+POST /api/auth/register - Register new user
+POST /api/auth/login    - Login and get JWT
+\`\`\`
 
-First, run the development server:
+### 📋 Task Endpoints
+\`\`\`
+GET    /api/tasks      - List tasks
+POST   /api/tasks      - Create task (LEAD)
+GET    /api/tasks/:id  - Get task details
+PUT    /api/tasks/:id  - Update task
+DELETE /api/tasks/:id  - Delete task (LEAD)
+\`\`\`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 👥 User Endpoints
+\`\`\`
+GET /api/users - List all users (LEAD)
+\`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 📜 History Endpoints
+\`\`\`
+GET /api/history          - Get task history
+GET /api/history?taskId=x - Get specific task history
+\`\`\`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📊 Database Schema
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### User Model
+- id: UUID
+- email: String (unique)
+- password: String (hashed)
+- name: String
+- role: Enum (LEAD, TEAM)
+- timestamps
 
-## Learn More
+### Task Model
+- id: UUID
+- title: String
+- description: String
+- status: Enum (NOT_STARTED, ON_PROGRESS, DONE, REJECT)
+- createdById: UUID
+- assignedToId: UUID (optional)
+- timestamps
 
-To learn more about Next.js, take a look at the following resources:
+### TaskHistory Model
+- id: UUID
+- taskId: UUID
+- userId: UUID
+- action: String
+- changes: JSON
+- timestamp: DateTime
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Railway Deployment
 
-## Deploy on Vercel
+1. **Install Railway CLI**
+   ```bash
+   npm i -g @railway/cli
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Login and Link**
+   ```bash
+   railway login
+   railway link
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Set Environment Variables**
+   - Add PostgreSQL database
+   - Configure JWT_SECRET
+   - Other environment variables as needed
+
+4. **Deploy**
+   ```bash
+   railway up
+   ```
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| DATABASE_URL | PostgreSQL connection string | Yes |
+| JWT_SECRET | Secret for JWT tokens | Yes |
+| PORT | Application port (default: 3000) | No |
+
+## 🛠 Development
+
+### Available Scripts
+
+- \`npm run dev\` - Start development server
+- \`npm run build\` - Build for production
+- \`npm start\` - Start production server
+- \`npm run lint\` - Run ESLint
+- \`npm run db:migrate\` - Run database migrations
+- \`npm run db:seed\` - Seed the database
+
+### Docker Commands
+
+- Start containers:
+  ```bash
+  docker-compose up -d
+  ```
+
+- Stop containers:
+  ```bash
+  docker-compose down
+  ```
+
+- View logs:
+  ```bash
+  docker-compose logs -f
+  ```
+
+## 📝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+Built with ❤️ using [Next.js](https://nextjs.org)
